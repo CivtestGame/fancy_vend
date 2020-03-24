@@ -297,21 +297,27 @@ local function can_modify_vendor(pos, player)
     local meta = minetest.get_meta(pos)
     local inv = meta:get_inventory()
     local is_owner = false
-    if meta:get_string("owner") == player:get_player_name() or minetest.check_player_privs(player, {protection_bypass=true}) then
+    if meta:get_string("owner") == player:get_player_name() or minetest.check_player_privs(player, {protection_bypass=true})
+       or not minetest.is_protected(pos, player:get_player_name())
+    then
         is_owner = true
     end
     return is_owner
 end
 
 local function can_dig_vendor(pos, player)
-    local meta = minetest.get_meta(pos);
-    local inv = meta:get_inventory()
-    return inv:is_empty("main") and can_modify_vendor(pos, player)
+   return true
 end
 
 local function can_access_vendor_inv(player, pos)
     local meta = minetest.get_meta(pos)
-    if minetest.check_player_privs(player, {protection_bypass=true}) or meta:get_string("owner") == player:get_player_name() then return true end
+    if minetest.check_player_privs(player, {protection_bypass=true})
+       or meta:get_string("owner") == player:get_player_name()
+       or not minetest.is_protected(pos, player:get_player_name())
+    then
+       return true
+    end
+
     local settings = get_vendor_settings(pos)
     local co_sellers = string.split(settings.co_sellers,",")
     for i in pairs(co_sellers) do
