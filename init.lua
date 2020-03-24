@@ -773,10 +773,10 @@ local function get_vendor_buyer_fs(pos, player, lots)
 
     local setting_specific = ""
     if not settings.accept_worn_input then
-        setting_specific = setting_specific.."label[4,1.6;Vendor will not accept worn tools.]"
+        setting_specific = setting_specific.."label[4,2;Vendor will not accept worn tools.]"
     end
     if not settings.accept_worn_output then
-        setting_specific = setting_specific.."label[4,1.2;Vendor will not sell worn tools.]"
+        setting_specific = setting_specific.."label[4,1.6;Vendor will not sell worn tools.]"
     end
 
     local fields = "field[2.2,3.2;1,0.6;lot_count;;"..(lots or 1).."]"
