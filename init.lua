@@ -1043,7 +1043,7 @@ local function refresh_vendor(pos)
             update_item(pos, node)
         end
 
-        if not alerted and not status and errorcode == "no_room" then
+        if not status and errorcode == "no_room" then
             minetest.chat_send_player(meta:get_string("owner"), "[Fancy_Vend]: Error with vendor at "..minetest.pos_to_string(pos, 0)..": does not have room for payment.")
             meta:set_string("alerted", "true")
         end
@@ -1312,8 +1312,15 @@ local vendor_template = {
 
         -- If failed to remove display node, don't remove vendor. since protection for whole vendor was checked at display removal, protection need not be re-checked
         if success then
+            local node_name = minetest.get_node(pos).name
+            local meta = minetest.get_meta(pos):to_table()
+
             minetest.remove_node(pos)
             minetest.handle_node_drops(pos, {drop_vendor}, digger)
+            local after_dig_node = core.registered_nodes[node_name].after_dig_node
+            if after_dig_node then
+               after_dig_node(pos, node_name, meta, digger)
+            end
             if minetest.get_modpath("pipeworks") then
                 pipeworks.after_dig(pos)
             end
