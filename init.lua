@@ -1238,7 +1238,7 @@ local vendor_template = {
         meta:set_string("message", "Vendor initialized")
         meta:set_string("owner", "")
         local inv = meta:get_inventory()
-        inv:set_size("main", 15*6)
+        inv:set_size("main", 8*2)
         inv:set_size("wanted_item", 1*1)
         inv:set_size("given_item", 1*1)
         reset_vendor_settings(pos)
