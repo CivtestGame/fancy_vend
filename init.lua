@@ -39,8 +39,21 @@ minetest.register_node("fancy_vend:display_node", display_node_def)
 -- Craftitem to display when vendor is inactive (Use just image for this???)
 minetest.register_craftitem("fancy_vend:inactive",{inventory_image = "inactive.png",})
 
-minetest.register_privilege("admin_vendor", "Enables the user to set regular vendors to admin vendors.")
-minetest.register_privilege("disable_vendor", "Enables the user to set all vendors to inactive.")
+minetest.register_privilege(
+   "admin_vendor",
+   {
+      description =  "Enables the user to set regular vendors to admin vendors.",
+      give_to_admin = false
+   }
+)
+
+minetest.register_privilege(
+   "disable_vendor",
+   {
+      description = "Enables the user to set all vendors to inactive.",
+      give_to_admin = false
+   }
+)
 
 local function bts(bool)
     if bool == false then
@@ -283,13 +296,6 @@ local function get_vendor_settings(pos)
 end
 
 local function can_buy_from_vendor(pos, player)
-    local settings = get_vendor_settings(pos)
-    local banned_buyers = string.split((settings.banned_buyers or ""),",")
-    for i in pairs(banned_buyers) do
-        if banned_buyers[i] == player:get_player_name() then
-            return false
-        end
-    end
     return true
 end
 
@@ -318,13 +324,6 @@ local function can_access_vendor_inv(player, pos)
        return true
     end
 
-    local settings = get_vendor_settings(pos)
-    local co_sellers = string.split(settings.co_sellers,",")
-    for i in pairs(co_sellers) do
-        if co_sellers[i] == player:get_player_name() then
-            return true
-        end
-    end
     return false
 end
 
@@ -684,7 +683,7 @@ local function make_purchase(pos, player, lots)
         if ct.player_has then
             if ct.player_fits then
                 if settings.admin_vendor then
-                    minetest.log("action", player:get_player_name().." trades "..settings.input_item_qty.." "..settings.input_item.." for "..settings.output_item_qty.." "..settings.output_item.." using vendor at "..minetest.pos_to_string(pos))
+                    minetest.log("verbose", player:get_player_name().." trades "..settings.input_item_qty.." "..settings.input_item.." for "..settings.output_item_qty.." "..settings.output_item.." using vendor at "..minetest.pos_to_string(pos))
 
                     inv_remove(player_inv, "main", ct.player_item_table, settings.input_item, input_qty)
                     inv_insert(player_inv, "main", ItemStack(settings.output_item), output_qty, nil)
@@ -696,7 +695,7 @@ local function make_purchase(pos, player, lots)
                     return true, "Trade successful"
                 elseif ct.vendor_has then
                     if ct.vendor_fits then
-                        minetest.log("action", player:get_player_name().." trades "..settings.input_item_qty.." "..settings.input_item.." for "..settings.output_item_qty.." "..settings.output_item.." using vendor at "..minetest.pos_to_string(pos))
+                        minetest.log("verbose", player:get_player_name().." trades "..settings.input_item_qty.." "..settings.input_item.." for "..settings.output_item_qty.." "..settings.output_item.." using vendor at "..minetest.pos_to_string(pos))
 
                         inv_remove(inv, "main", ct.vendor_item_table, settings.output_item, output_qty)
                         inv_remove(player_inv, "main", ct.player_item_table, settings.input_item, input_qty)
@@ -756,8 +755,7 @@ local function get_vendor_buyer_fs(pos, player, lots)
     end
     local status_fs =
     "label[4,0.4;Vendor status: "..status_str.."]"..
-    "label[4,0.8;Message: "..meta:get_string("message").."]"..
-    "label[4,0;Vendor owned by: "..meta:get_string("owner").."]"
+    "label[4,0.8;Message: "..meta:get_string("message").."]"
 
     local setting_specific = ""
     if not settings.accept_worn_input then
@@ -804,16 +802,10 @@ local function get_vendor_settings_fs(pos)
     local fields =
         "field[2.2,0.8;1,0.6;input_item_qty;;"..settings.input_item_qty.."]"..
         "field[6.2,0.8;1,0.6;output_item_qty;;"..settings.output_item_qty.."]"..
-        "field[1.3,4.1;2.66,1;co_sellers;Co-Sellers:;"..settings.co_sellers.."]"..
-        "field[3.86,4.1;2.66,1;banned_buyers;Banned Buyers:;"..settings.banned_buyers.."]"..
         "field_close_on_enter[input_item_qty;false]"..
-        "field_close_on_enter[output_item_qty;false]"..
-        "field_close_on_enter[co_sellers;false]"..
-        "field_close_on_enter[banned_buyers;false]"
+        "field_close_on_enter[output_item_qty;false]"
 
     local checkboxes =
-        "checkbox[1,2.2;inactive_force;Force vendor into an inactive state.;"..bts(settings.inactive_force).."]"..
-        "checkbox[1,2.6;depositor;Set this vendor to a Depositor.;"..bts(settings.depositor).."]"..
         "checkbox[1,3.0;accept_worn_output;Sell worn tools.;"..bts(settings.accept_worn_output).."]"..
         "checkbox[5,3.0;accept_worn_input;Buy worn tools.;"..bts(settings.accept_worn_input).."]"..
         "checkbox[5,2.6;auto_sort;Automatically sort inventory.;"..bts(settings.auto_sort).."]"
@@ -863,7 +855,7 @@ local function get_vendor_default_fs(pos, player)
     -- Add dynamic elements
     local pos_str = pos.x..","..pos.y..","..pos.z
     local inv_lists =
-        "list[nodemeta:"..pos_str..";main;1,0.3;15,6;]"..
+        "list[nodemeta:"..pos_str..";main;1,0.3;8,2;]"..
         "listring[nodemeta:"..pos_str..";main]"
 
     local settings_btn = ""
@@ -937,17 +929,9 @@ end
 
 local function get_correct_vendor(settings)
     if settings.admin_vendor then
-        if settings.depositor then
-            return "fancy_vend:admin_depo"
-        else
-            return "fancy_vend:admin_vendor"
-        end
+       return "fancy_vend:admin_vendor"
     else
-        if settings.depositor then
-            return "fancy_vend:player_depo"
-        else
-            return "fancy_vend:player_vendor"
-        end
+       return "fancy_vend:player_vendor"
     end
 end
 
@@ -983,7 +967,7 @@ local function refresh_vendor(pos)
     end
 
     if status then
-        meta:set_string("infotext", (settings.admin_vendor and "Admin" or "Player").." Vendor trading "..settings.input_item_qty.." "..minetest.registered_items[settings.input_item].description.." for "..settings.output_item_qty.." "..minetest.registered_items[settings.output_item].description.." (owned by " .. meta:get_string("owner") .. ")")
+        meta:set_string("infotext", "Vendor: "..settings.input_item_qty.." "..minetest.registered_items[settings.input_item].description.." for "..settings.output_item_qty.." "..minetest.registered_items[settings.output_item].description)
 
         if meta:get_string("configured") == "" then
             meta:set_string("configured", "true")
@@ -1025,19 +1009,14 @@ local function refresh_vendor(pos)
             end
         end
 
-        if settings.depositor then
-            if meta:get_string("item") ~= settings.input_item then
-                meta:set_string("item", settings.input_item)
-                update_item(pos, node)
-            end
-        else
-            if meta:get_string("item") ~= settings.output_item then
-                meta:set_string("item", settings.output_item)
-                update_item(pos, node)
-            end
+
+        if meta:get_string("item") ~= settings.output_item then
+           meta:set_string("item", settings.output_item)
+           update_item(pos, node)
         end
+
     else
-        meta:set_string("infotext", "Inactive "..(settings.admin_vendor and "Admin" or "Player").." Vendor"..make_inactive_string(errorcode).." (owned by " .. meta:get_string("owner") .. ")")
+        meta:set_string("infotext", "Inactive Vendor"..make_inactive_string(errorcode))
         if meta:get_string("item") ~= "fancy_vend:inactive" then
             meta:set_string("item", "fancy_vend:inactive")
             update_item(pos, node)
@@ -1149,7 +1128,7 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
                     table.remove(logs, 1)
                 end
             end
-            table.insert(logs, "Player "..player:get_player_name().." purchased "..lots.." lots from this vendor.")
+            table.insert(logs, player:get_player_name().." purchased "..lots.." lots.")
             meta:set_string("log", minetest.serialize(logs))
 
             -- Send digiline message if applicable
@@ -1174,19 +1153,19 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
 
     if can_access_vendor_inv(player, pos) then
         if fields.inv_tovendor then
-            minetest.log("action", player:get_player_name().." moves inventory contents to vendor at "..minetest.pos_to_string(pos))
+            minetest.log("verbose", player:get_player_name().." moves inventory contents to vendor at "..minetest.pos_to_string(pos))
             move_inv(player_inv, inv, nil)
             refresh_vendor(pos)
         elseif fields.inv_output_tovendor then
-            minetest.log("action", player:get_player_name().." moves output items in inventory to vendor at "..minetest.pos_to_string(pos))
+            minetest.log("verbose", player:get_player_name().." moves output items in inventory to vendor at "..minetest.pos_to_string(pos))
             move_inv(player_inv, inv, settings.output_item)
             refresh_vendor(pos)
         elseif fields.inv_fromvendor then
-            minetest.log("action", player:get_player_name().." moves inventory contents from vendor at "..minetest.pos_to_string(pos))
+            minetest.log("verbose", player:get_player_name().." moves inventory contents from vendor at "..minetest.pos_to_string(pos))
             move_inv(inv, player_inv, nil)
             refresh_vendor(pos)
         elseif fields.inv_input_fromvendor then
-            minetest.log("action", player:get_player_name().." moves input items from vendor at "..minetest.pos_to_string(pos))
+            minetest.log("verbose", player:get_player_name().." moves input items from vendor at "..minetest.pos_to_string(pos))
             move_inv(inv, player_inv, settings.input_item)
             refresh_vendor(pos)
         end
@@ -1295,7 +1274,7 @@ local vendor_template = {
         -- Try remove display node, if the whole node is able to be removed by the player, remove the display node and continue to remove vendor, if it doesn't exist and vendor can be dug continue to remove vendor.
         local success
         if minetest.get_node(above_node_pos).name == "fancy_vend:display_node" then
-            if not minetest.is_protected(above_node_pos, name) and not minetest.is_protected(pos, name) then
+            if not minetest.is_protected(above_node_pos, name) and not minetest.is_protected(pos, name, core.DIG_ACTION) then
                 minetest.remove_node(above_node_pos)
                 remove_item(above_node_pos)
                 success = true
@@ -1403,15 +1382,15 @@ local vendor_template = {
         show_vendor_formspec(clicker, pos)
     end,
     on_metadata_inventory_move = function(pos, from_list, from_index, to_list, to_index, count, player)
-        minetest.log("action", player:get_player_name().." moves stuff in vendor at "..minetest.pos_to_string(pos))
+        minetest.log("verbose", player:get_player_name().." moves stuff in vendor at "..minetest.pos_to_string(pos))
         refresh_vendor(pos)
     end,
     on_metadata_inventory_put = function(pos, listname, index, stack, player)
-        minetest.log("action", player:get_player_name().." moves "..stack:get_name().." to vendor at "..minetest.pos_to_string(pos))
+        minetest.log("verbose", player:get_player_name().." moves "..stack:get_name().." to vendor at "..minetest.pos_to_string(pos))
         refresh_vendor(pos)
     end,
     on_metadata_inventory_take = function(pos, listname, index, stack, player)
-        minetest.log("action", player:get_player_name().." takes "..stack:get_name().." from vendor at "..minetest.pos_to_string(pos))
+        minetest.log("verbose", player:get_player_name().." takes "..stack:get_name().." from vendor at "..minetest.pos_to_string(pos))
         refresh_vendor(pos)
     end,
     on_blast = function()
