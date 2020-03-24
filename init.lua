@@ -633,9 +633,22 @@ local function run_inv_checks(pos, player, lots)
     local input_qty = settings.input_item_qty * lots
 
     -- Perform inventory checks
-    ct.player_has, ct.player_item_table = inv_contains_items(player_inv, "main", settings.input_item, input_qty, settings.accept_worn_input)
+    ct.player_has, ct.player_item_table = inv_contains_items(player_inv, "main2", settings.input_item, input_qty, settings.accept_worn_input)
+    ct.player_has_invlist = "main2"
+    if not ct.player_has then
+       ct.player_has, ct.player_item_table = inv_contains_items(player_inv, "main", settings.input_item, input_qty, settings.accept_worn_input)
+       ct.player_has_invlist = "main"
+    end
+
     ct.vendor_has, ct.vendor_item_table = inv_contains_items(inv, "main", settings.output_item, output_qty, settings.accept_worn_output)
-    ct.player_fits = free_slots(player_inv, "main", settings.output_item, output_qty)
+
+    ct.player_fits = free_slots(player_inv, "main2", settings.output_item, output_qty)
+    ct.player_fits_invlist = "main2"
+    if not ct.player_fits then
+        ct.player_fits = free_slots(player_inv, "main", settings.output_item, output_qty)
+        ct.player_fits_invlist = "main"
+    end
+
     ct.vendor_fits = free_slots(inv, "main", settings.input_item, input_qty)
 
     if ct.player_has and ct.vendor_has and ct.player_fits and ct.vendor_fits then
@@ -698,8 +711,8 @@ local function make_purchase(pos, player, lots)
                         minetest.log("verbose", player:get_player_name().." trades "..settings.input_item_qty.." "..settings.input_item.." for "..settings.output_item_qty.." "..settings.output_item.." using vendor at "..minetest.pos_to_string(pos))
 
                         inv_remove(inv, "main", ct.vendor_item_table, settings.output_item, output_qty)
-                        inv_remove(player_inv, "main", ct.player_item_table, settings.input_item, input_qty)
-                        inv_insert(player_inv, "main", ItemStack(settings.output_item), output_qty, ct.vendor_item_table)
+                        inv_remove(player_inv, ct.player_has_invlist, ct.player_item_table, settings.input_item, input_qty)
+                        inv_insert(player_inv, ct.player_fits_invlist, ItemStack(settings.output_item), output_qty, ct.vendor_item_table)
                         inv_insert(inv, "main", ItemStack(settings.input_item), input_qty, ct.player_item_table, pos, (minetest.get_modpath("pipeworks") and settings.currency_eject))
 
                         -- Run mail mod checks
@@ -731,9 +744,9 @@ local function get_vendor_buyer_fs(pos, player, lots)
         "button[0,2.7;2,1;buy;Buy]"..
         "label[2.8,2.9;lots.]"..
         "button[0,3.6;2,1;lot_fill;Fill lots to max.]"..
-        "list[current_player;main;0,4.85;8,1;]"..
-        "list[current_player;main;0,6.08;8,3;8]"..
+        sfinv.get_inventory_area_formspec(4.85)..
         "listring[current_player;main]"..
+        "listring[current_player;main2]"..
         "field_close_on_enter[lot_count;false]"
 
     -- Add dynamic elements
@@ -778,9 +791,8 @@ local function get_vendor_settings_fs(pos)
         "image[0,1.3;1,1;debug_btn.png]"..
         "item_image_button[0,2.3;1,1;default:book;button_log;]"..
         "item_image_button[0,3.3;1,1;default:gold_ingot;button_buy;]"..
-        "list[current_player;main;1,4.85;8,1;]"..
-        "list[current_player;main;1,6.08;8,3;8]"..
-        "listring[current_player;main]"..
+        sfinv.get_inventory_area_formspec(4.85, 1)..
+        "listring[current_player;main2]"..
         "button_exit[0,8;1,1;btn_exit;Done]"
 
     -- Add dynamic elements
@@ -842,13 +854,11 @@ end
 local function get_vendor_default_fs(pos, player)
     local base = "size[16,11]"..
         "item_image[0,0.3;1,1;default:chest]"..
-        "list[current_player;main;4,6.85;8,1;]"..
-        "list[current_player;main;4,8.08;8,3;8]"..
-        "listring[current_player;main]"..
-        "button[1,6.85;3,1;inv_tovendor;All To Vendor]"..
-        "button[12,6.85;3,1;inv_fromvendor;All From Vendor]"..
-        "button[1,8.08;3,1;inv_output_tovendor;Output To Vendor]"..
-        "button[12,8.08;3,1;inv_input_fromvendor;Input From Vendor]"..
+        sfinv.get_inventory_area_formspec(6.85, 4)..
+        -- "button[1,6.85;3,1;inv_tovendor;All To Vendor]"..
+        -- "button[12,6.85;3,1;inv_fromvendor;All From Vendor]"..
+        -- "button[1,8.08;3,1;inv_output_tovendor;Output To Vendor]"..
+        -- "button[12,8.08;3,1;inv_input_fromvendor;Input From Vendor]"..
         "button[1,9.31;3,1;sort;Sort Inventory]"..
         "button_exit[0,10;1,1;btn_exit;Done]"
 
@@ -856,6 +866,10 @@ local function get_vendor_default_fs(pos, player)
     local pos_str = pos.x..","..pos.y..","..pos.z
     local inv_lists =
         "list[nodemeta:"..pos_str..";main;1,0.3;8,2;]"..
+        "listring[nodemeta:"..pos_str..";main]"..
+        "listring[current_player;main2]"..
+        "listring[nodemeta:"..pos_str..";main]"..
+        "listring[current_player;main]"..
         "listring[nodemeta:"..pos_str..";main]"
 
     local settings_btn = ""
