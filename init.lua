@@ -14,7 +14,7 @@
 
 local settings = minetest.settings
 
-local display_node = (settings:get("fancy_vend.display_node") or "default:obsidian_glass")
+local display_node = (settings:get("fancy_vend.display_node") or "default:glass")
 local max_logs = (tonumber(settings:get("fancy_vend.log_max")) or 40)
 local autorotate_speed = (tonumber(settings:get("fancy_vend.autorotate_speed")) or 1)
 local no_alerts = settings:get_bool("fancy_vend.no_alerts")
@@ -767,8 +767,9 @@ local function get_vendor_buyer_fs(pos, player, lots)
         status_str = "inactive"..make_inactive_string(errorcode)
     end
     local status_fs =
-    "label[4,0.4;Vendor status: "..status_str.."]"..
-    "label[4,0.8;Message: "..meta:get_string("message").."]"
+    "label[4,0.4;Status: "..status_str.."]"..
+    "label[4,0.8;Message:]"..
+    "label[4,1.2;"..meta:get_string("message").."]"
 
     local setting_specific = ""
     if not settings.accept_worn_input then
@@ -1463,9 +1464,9 @@ minetest.register_node("fancy_vend:admin_depo", admin_depo)
 minetest.register_craft({
     output = "fancy_vend:player_vendor",
     recipe = {
-        { "default:gold_ingot",display_node,          "default:gold_ingot"},
-        { "default:diamond",   "default:mese_crystal",        "default:diamond"},
-        { "default:gold_ingot","default:chest_locked","default:gold_ingot"},
+        { "",                    display_node,          ""},
+        { "default:copper_ingot","citadella:chest",     "default:copper_ingot"},
+        { "default:tin_ingot",   "default:copper_ingot","default:tin_ingot"},
     }
 })
 
@@ -1557,7 +1558,7 @@ minetest.register_craft({
     recipe = {
         {"default:stick","",                      ""               },
         {"",             "default:obsidian_shard",""               },
-        {"",             "",                      "default:diamond"},
+        {"",             "",                      "default:iron_ingot"},
     }
 })
 
@@ -1566,7 +1567,7 @@ minetest.register_craft({
     recipe = {
         {"",               "",                      "default:stick"},
         {"",               "default:obsidian_shard",""             },
-        {"default:diamond","",                      ""             },
+        {"default:iron_ingot","",                      ""             },
     }
 })
 
