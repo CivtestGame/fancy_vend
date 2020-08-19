@@ -868,9 +868,11 @@ local function get_vendor_default_fs(pos, player)
     local inv_lists =
         "list[nodemeta:"..pos_str..";main;1,0.3;8,2;]"..
         "listring[nodemeta:"..pos_str..";main]"..
-        "listring[current_player;main2]"..
-        "listring[nodemeta:"..pos_str..";main]"..
+        "listring[current_player;router]"..
+
         "listring[current_player;main]"..
+        "listring[nodemeta:"..pos_str..";main]"..
+        "listring[current_player;main2]"..
         "listring[nodemeta:"..pos_str..";main]"
 
     local settings_btn = ""
@@ -1102,12 +1104,13 @@ minetest.register_on_player_receive_fields(function(player, formname, fields)
         end
 
         -- Check item quantities aren't too high (which could lead to additional processing for no reason), if so, set it to the maximum the player inventory can handle
-        if ItemStack(settings.output_item):get_stack_max() * player_inv:get_size("main") < settings.output_item_qty then
-            settings.output_item_qty = ItemStack(settings.output_item):get_stack_max() * player_inv:get_size("main")
+	local player_inv_size = player_inv:get_size("main") + player_inv:get_size("main2")
+        if ItemStack(settings.output_item):get_stack_max() * player_inv_size < settings.output_item_qty then
+            settings.output_item_qty = ItemStack(settings.output_item):get_stack_max() * player_inv_size
         end
 
-        if ItemStack(settings.input_item):get_stack_max() * player_inv:get_size("main") < settings.input_item_qty then
-            settings.input_item_qty = ItemStack(settings.input_item):get_stack_max() * player_inv:get_size("main")
+        if ItemStack(settings.input_item):get_stack_max() * player_inv_size < settings.input_item_qty then
+            settings.input_item_qty = ItemStack(settings.input_item):get_stack_max() * player_inv_size
         end
 
         -- Admin vendor priv check
